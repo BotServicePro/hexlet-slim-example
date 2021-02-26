@@ -1,0 +1,18 @@
+<?php foreach ($users as $user): ?>
+    <tr>
+        <td><?= $user ?></td>
+    </tr>
+<?php endforeach ?>
+<br>
+<br>
+<form action="/users" method="get">
+    <input type="search" name="term" value="" />
+    <input type="submit" value="Search" />
+</form>
+<?php if ($result !== null): ?>
+    <?php foreach ($result as $names): ?>
+        <tr>
+            <td><?= htmlspecialchars($names) ?></td>
+        </tr>
+    <?php endforeach ?>
+<?php endif ?>
