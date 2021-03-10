@@ -1,0 +1,20 @@
+<!-- templates/users/new.phtml -->
+<a href="/products">Show all products</a>
+<br>
+<br>
+<form action="/products" method="post">
+    <div>Title:<span style='color: red;'> *</span><br>
+            <input type="text" required name="product[title]" value="<?= htmlspecialchars($product['title']) ?>">
+        <?php if (isset($errors['name'])): ?>
+            <div><?= $errors['name'] ?></div>
+        <?php endif ?>
+    </div>
+    <div>Description:<span style='color: red;'> *</span><br>
+            <input type="text" required name="product[description]" value="<?= htmlspecialchars($product['description']) ?>">
+        <?php if (isset($errors['title'])): ?>
+            <div><?= $errors['title'] ?></div>
+        <?php endif ?>
+    </div>
+    <br>
+    <input type="submit" value="Add new product">
+</form>
