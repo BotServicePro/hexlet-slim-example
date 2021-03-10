@@ -68,7 +68,7 @@ $app->get('/products', function ($request, $response) use ($productsData) {
         return $this->get('renderer')->render($response, "products/index.phtml", $params);
     } else {
         // если поисковой запрос НЕ содержит значения, то передаем ВСЕ данные для полного отображения
-        $params = ['products' => $productsData];
+        $params = ['products' => $productsData, 'searchRequest' => $searchRequest];
         return $this->get('renderer')->render($response, "products/index.phtml", $params);
     }
 })->setName('products');
