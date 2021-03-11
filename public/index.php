@@ -15,6 +15,8 @@ $container->set('renderer', function () {
 });
 $app = AppFactory::createFromContainer($container);
 $app->addErrorMiddleware(true, true, true);
+
+// Получаем роутер – объект отвечающий за хранение и обработку маршрутов
 $router = $app->getRouteCollector()->getRouteParser();
 
 // функция подготовки данных из товаров
@@ -45,9 +47,9 @@ function makeUniqueId($len = 5): string
 $app->get('/', function ($request, $response) use ($router) {
     $response->write('<H>Welcome to AliParser</H><br><br>');
     // объявляем именованные маршруты
-    //$router->urlFor('products'); // /products
-    //$router->urlFor('addProduct'); // /products/new
-    $links = '<a href="/products">All products</a> <br> <a href="/products/new">Add new product</a>';
+    $products = $router->urlFor('products'); // /products
+    $productNew = $router->urlFor('productNew'); // /products/new
+    $links = "<a href='{$products}'>All products</a> <br> <a href='{$productNew}'>Add new product</a>";
     return $response->write($links);
 });
 
@@ -61,7 +63,8 @@ $app->get('/products', function ($request, $response) use ($productsData) {
                 return [
                     'id' => $product['id'],
                     'title' => $product['title'],
-                    'description' => $product['description']];
+                    'description' => $product['description']
+                ];
             }
         });
         $params = ['products' => $result, 'searchRequest' => $searchRequest];
@@ -90,13 +93,7 @@ $app->get('/product/{id}', function ($request, $response, $args) use ($productsD
         return $this->get('renderer')->render($response, "products/single.phtml", $params);
     }
     return $response->write('Woooops! Product not found!<br><a href="/products">All product</a>');
-
-
 })->setName('singleProduct');
-
-
-
-
 
 // форма добавления нового товара
 $app->get('/products/new', function ($request, $response) {
@@ -105,7 +102,7 @@ $app->get('/products/new', function ($request, $response) {
         'errors' => [],
     ];
     return $this->get('renderer')->render($response, "products/new.phtml", $params);
-})->setName('addProduct');
+})->setName('productNew');
 
 // Отправляем запрос на ДОБАВЛЕНИЕ товара
 $app->post('/products', function ($request, $response) {
@@ -121,5 +118,4 @@ $app->post('/products', function ($request, $response) {
     file_put_contents('base.txt', json_encode($data) . "\n", FILE_APPEND);
     return $this->get('renderer')->render($response, "products/new.phtml", $params);
 });
-
 $app->run();
