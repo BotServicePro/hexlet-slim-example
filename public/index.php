@@ -13,6 +13,7 @@ $container->set('renderer', function () {
     // Параметром передается базовая директория, в которой будут храниться шаблоны
     return new \Slim\Views\PhpRenderer(__DIR__ . '/../templates');
 });
+
 $app = AppFactory::createFromContainer($container);
 $app->addErrorMiddleware(true, true, true);
 
@@ -92,7 +93,7 @@ $app->get('/product/{id}', function ($request, $response, $args) use ($productsD
         ];
         return $this->get('renderer')->render($response, "products/single.phtml", $params);
     }
-    return $response->write('Woooops! Product not found!<br><a href="/products">All product</a>');
+    return $response->write('Woooops! Product not found!<br><a href="/products">All product</a>')->withStatus(404);
 })->setName('singleProduct');
 
 // форма добавления нового товара
@@ -107,10 +108,7 @@ $app->get('/products/new', function ($request, $response) {
 // Отправляем запрос на ДОБАВЛЕНИЕ товара
 $app->post('/products', function ($request, $response) {
     $data = $request->getParsedBody('product')['product'];
-    $id = makeUniqueId();
-    $title = $data['title'];
-    $description = $data['description'];
-    $data = ['id' => $id, 'title' => $title, 'description' => $description];
+    $data = ['id' => makeUniqueId(), 'title' => $data['title'], 'description' => $data['description']];
     $params = [
         'product' => ['id' => '', 'title' => '', 'description' => ''],
         'errors' => [],
