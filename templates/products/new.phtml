@@ -9,7 +9,7 @@
             <div><?= $errors['name'] ?></div>
         <?php endif ?>
     </div>
-    <div>Description:<span style='color: red;'> *</span><br>
+    <div>Description:<span style='color: #ff0000;'> *</span><br>
             <input type="text" required name="product[description]" value="<?= htmlspecialchars($product['description']) ?>">
         <?php if (isset($errors['title'])): ?>
             <div><?= $errors['title'] ?></div>
@@ -17,4 +17,5 @@
     </div>
     <br>
     <input type="submit" value="Add new product">
+    <br>
 </form>
