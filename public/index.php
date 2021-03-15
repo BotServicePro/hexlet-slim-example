@@ -108,7 +108,11 @@ $app->get('/products', function ($request, $response) use ($productsData) {
         return $this->get('renderer')->render($response, "products/index.phtml", $params);
     } else {
         // если поисковой запрос НЕ содержит значения, то передаем ВСЕ данные для полного отображения
-        $params = ['products' => $slicedPosts, 'searchRequest' => $searchRequest, 'page' => $page, 'flash' => $messages];
+        $params = ['products' => $slicedPosts,
+            'searchRequest' => $searchRequest,
+            'page' => $page,
+            'flash' => $messages
+        ];
         return $this->get('renderer')->render($response, "products/index.phtml", $params);
     }
 })->setName('products');
@@ -120,11 +124,10 @@ $app->get('/product/{id}', function ($request, $response, $args) use ($productsD
         return $searchId === $product['id'] ? $product : $acc;
     }, []);
     if (count($findedProduct) > 0) {
-        $params = [
-            'product' => [
-                'id' => $findedProduct['id'],
-                'title' => $findedProduct['title'],
-                'description' => $findedProduct['description']
+        $params = ['product' => [
+            'id' => $findedProduct['id'],
+            'title' => $findedProduct['title'],
+            'description' => $findedProduct['description']
             ],
         ];
         return $this->get('renderer')->render($response, "products/single.phtml", $params);
@@ -143,7 +146,8 @@ $app->get('/products/new', function ($request, $response) {
 
 // Отправляем запрос на ДОБАВЛЕНИЕ товара
 $app->post('/products', function ($request, $response) use ($router) {
-    $data = $request->getParsedBody('product')['product'];
+    //$data = $request->getParsedBody('product')['product'];
+    $data = $request->getParsedBodyParam('product');
     if (empty(validate($data))) { // если ошибок нет
         $data = ['id' => makeUniqueId(), 'title' => $data['title'], 'description' => $data['description']];
         $this->get('flash')->addMessage('success', 'Success! Product has been created!');
@@ -155,7 +159,7 @@ $app->post('/products', function ($request, $response) use ($router) {
             'product' => $data,
             'errors' => validate($data)
         ];
-        $response = $response->withStatus(422);
+        $response = $response->withStatus(422); // статус страницы если были ошибки при вводе
         return $this->get('renderer')->render($response, 'products/new.phtml', $params);
     }
 });
