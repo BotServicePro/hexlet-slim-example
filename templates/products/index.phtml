@@ -39,5 +39,7 @@
         </tr>
     <?php endforeach ?>
 </table>
+<br>
+<a href="?page=<?= $page < 2 ? 1 : $page - 1 ?>">Back</a> / <a href="?page=<?= $page + 1 ?>">Forwad</a>
 </body>
 </html>

@@ -56,15 +56,26 @@ $app->get('/', function ($request, $response) use ($router) {
 
 // Выводим список всех товаров
 $app->get('/products', function ($request, $response) use ($productsData) {
+    $per = 5;
+    $page = $request->getQueryParam('page', 1);
+    $slicedPosts = array_slice($productsData, ($page - 1) * $per, $per);
+    // если продуктов нет
+    if (count($slicedPosts) === 0) {
+        --$page;
+        return $response->write("Wooops, not found! <br> <a href='/products?page={$page}'>Back</a>")->withStatus(404);
+    }
+
+
     $searchRequest = $request->getQueryParam('term');
     // если поисковой запрос содержит значение (не нулл)
     if ($searchRequest != null) {
-        $result = array_filter($productsData, function ($product) use ($searchRequest) {
+        $result = array_filter($productsData, function ($product) use ($searchRequest, $page) {
             if (is_int(strripos($product['title'], $searchRequest))) {
                 return [
                     'id' => $product['id'],
                     'title' => $product['title'],
-                    'description' => $product['description']
+                    'description' => $product['description'],
+                    'page' => $page
                 ];
             }
         });
@@ -72,7 +83,7 @@ $app->get('/products', function ($request, $response) use ($productsData) {
         return $this->get('renderer')->render($response, "products/index.phtml", $params);
     } else {
         // если поисковой запрос НЕ содержит значения, то передаем ВСЕ данные для полного отображения
-        $params = ['products' => $productsData, 'searchRequest' => $searchRequest];
+        $params = ['products' => $slicedPosts, 'searchRequest' => $searchRequest, 'page' => $page];
         return $this->get('renderer')->render($response, "products/index.phtml", $params);
     }
 })->setName('products');
