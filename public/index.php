@@ -8,10 +8,17 @@ require __DIR__ . '/../vendor/autoload.php';
 use Slim\Factory\AppFactory;
 use DI\Container;
 
+session_start();
+
 $container = new Container();
 $container->set('renderer', function () {
     // Параметром передается базовая директория, в которой будут храниться шаблоны
     return new \Slim\Views\PhpRenderer(__DIR__ . '/../templates');
+});
+
+// подключаем флэш
+$container->set('flash', function () {
+    return new \Slim\Flash\Messages();
 });
 
 $app = AppFactory::createFromContainer($container);
@@ -44,6 +51,19 @@ function makeUniqueId($len = 5): string
     return $randChars;
 }
 
+// функци валидатор данных
+function validate($data): array
+{
+    $errors = [];
+    if ($data['title'] === '') {
+        $errors['title'] = "Title can't be blank!";
+    }
+    if ($data['description'] === '') {
+        $errors['description'] = "Description can't be blank!";
+    }
+    return $errors;
+}
+
 // Главная страница
 $app->get('/', function ($request, $response) use ($router) {
     $response->write('<H>Welcome to AliParser</H><br><br>');
@@ -59,17 +79,22 @@ $app->get('/products', function ($request, $response) use ($productsData) {
     $per = 5;
     $page = $request->getQueryParam('page', 1);
     $slicedPosts = array_slice($productsData, ($page - 1) * $per, $per);
-    // если продуктов нет
+    $messages = $this->get('flash')->getMessages(); // читаем флэш сообщение которое образовалось в POST запросе
+    // если есть сообщения для вывода то выводим
+    //print_r($messages);
+    if (!empty($messages)) {
+        $message = $messages['success'][0];
+        print_r("<H2>{$message}</H2>");
+    }
+    // если продуктов на странице нет
     if (count($slicedPosts) === 0) {
         --$page;
         return $response->write("Wooops, not found! <br> <a href='/products?page={$page}'>Back</a>")->withStatus(404);
     }
-
-
     $searchRequest = $request->getQueryParam('term');
     // если поисковой запрос содержит значение (не нулл)
     if ($searchRequest != null) {
-        $result = array_filter($productsData, function ($product) use ($searchRequest, $page) {
+        $result = array_filter($productsData, function ($product) use ($searchRequest, $page, $messages) {
             if (is_int(strripos($product['title'], $searchRequest))) {
                 return [
                     'id' => $product['id'],
@@ -79,11 +104,11 @@ $app->get('/products', function ($request, $response) use ($productsData) {
                 ];
             }
         });
-        $params = ['products' => $result, 'searchRequest' => $searchRequest];
+        $params = ['products' => $result, 'searchRequest' => $searchRequest, 'flash' => $messages];
         return $this->get('renderer')->render($response, "products/index.phtml", $params);
     } else {
         // если поисковой запрос НЕ содержит значения, то передаем ВСЕ данные для полного отображения
-        $params = ['products' => $slicedPosts, 'searchRequest' => $searchRequest, 'page' => $page];
+        $params = ['products' => $slicedPosts, 'searchRequest' => $searchRequest, 'page' => $page, 'flash' => $messages];
         return $this->get('renderer')->render($response, "products/index.phtml", $params);
     }
 })->setName('products');
@@ -117,14 +142,21 @@ $app->get('/products/new', function ($request, $response) {
 })->setName('productNew');
 
 // Отправляем запрос на ДОБАВЛЕНИЕ товара
-$app->post('/products', function ($request, $response) {
+$app->post('/products', function ($request, $response) use ($router) {
     $data = $request->getParsedBody('product')['product'];
-    $data = ['id' => makeUniqueId(), 'title' => $data['title'], 'description' => $data['description']];
-    $params = [
-        'product' => ['id' => '', 'title' => '', 'description' => ''],
-        'errors' => [],
-    ];
-    file_put_contents('base.txt', json_encode($data) . "\n", FILE_APPEND);
-    return $this->get('renderer')->render($response, "products/new.phtml", $params);
+    if (empty(validate($data))) { // если ошибок нет
+        $data = ['id' => makeUniqueId(), 'title' => $data['title'], 'description' => $data['description']];
+        $this->get('flash')->addMessage('success', 'Success! Product has been created!');
+        file_put_contents('base.txt', json_encode($data) . "\n", FILE_APPEND);
+        $url = $router->urlFor('products');
+        return $response->withRedirect($url);
+    } elseif (!empty(validate($data))) { // если есть ошибки
+        $params = [
+            'product' => $data,
+            'errors' => validate($data)
+        ];
+        $response = $response->withStatus(422);
+        return $this->get('renderer')->render($response, 'products/new.phtml', $params);
+    }
 });
 $app->run();

@@ -4,15 +4,15 @@
 <br>
 <form action="/products" method="post">
     <div>Title:<span style='color: red;'> *</span><br>
-            <input type="text" required name="product[title]" value="<?= htmlspecialchars($product['title']) ?>">
-        <?php if (isset($errors['name'])): ?>
-            <div><?= $errors['name'] ?></div>
+            <input type="text" name="product[title]" value="<?= htmlspecialchars($product['title']) ?>">
+        <?php if (isset($errors['title'])): ?>
+            <div><b><?= $errors['title'] ?></b></div>
         <?php endif ?>
     </div>
     <div>Description:<span style='color: #ff0000;'> *</span><br>
-            <input type="text" required name="product[description]" value="<?= htmlspecialchars($product['description']) ?>">
-        <?php if (isset($errors['title'])): ?>
-            <div><?= $errors['title'] ?></div>
+            <input type="text" name="product[description]" value="<?= htmlspecialchars($product['description']) ?>">
+        <?php if (isset($errors['description'])): ?>
+            <div><b><?= $errors['description'] ?></b></div>
         <?php endif ?>
     </div>
     <br>
