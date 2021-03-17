@@ -7,22 +7,26 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Slim\Factory\AppFactory;
 use DI\Container;
+use Slim\Flash\Messages;
+use Slim\Middleware\MethodOverrideMiddleware;
+use Slim\Views\PhpRenderer;
 
 session_start();
 
 $container = new Container();
 $container->set('renderer', function () {
     // Параметром передается базовая директория, в которой будут храниться шаблоны
-    return new \Slim\Views\PhpRenderer(__DIR__ . '/../templates');
+    return new PhpRenderer(__DIR__ . '/../templates');
 });
 
 // подключаем флэш
-$container->set('flash', function () {
-    return new \Slim\Flash\Messages();
-});
+$container->set('flash', fn() => new Messages());
 
 $app = AppFactory::createFromContainer($container);
 $app->addErrorMiddleware(true, true, true);
+
+// Включаем поддержку переопределения метода в самом Slim
+$app->add(MethodOverrideMiddleware::class);
 
 // Получаем роутер – объект отвечающий за хранение и обработку маршрутов
 $router = $app->getRouteCollector()->getRouteParser();
@@ -40,7 +44,6 @@ function getProductsData(): array
     }, $productsData);
     return $readyData;
 }
-$productsData = getProductsData();
 
 // функция создания уникального ID
 function makeUniqueId($len = 5): string
@@ -75,7 +78,8 @@ $app->get('/', function ($request, $response) use ($router) {
 });
 
 // Выводим список всех товаров
-$app->get('/products', function ($request, $response) use ($productsData) {
+$app->get('/products', function ($request, $response) {
+    $productsData = getProductsData();
     $per = 5;
     $page = $request->getQueryParam('page', 1);
     $slicedPosts = array_slice($productsData, ($page - 1) * $per, $per);
@@ -118,8 +122,15 @@ $app->get('/products', function ($request, $response) use ($productsData) {
 })->setName('products');
 
 // выводим только один продукт по ID по динамическому маршруту
-$app->get('/product/{id}', function ($request, $response, $args) use ($productsData) {
+$app->get('/product/{id}', function ($request, $response, $args) use ($router) {
+    $productsData = getProductsData();
     $searchId = $args['id'];
+    $messages = $this->get('flash')->getMessages(); // читаем флэш сообщение которое образовалось в PATCH запросе
+    // если есть сообщения для вывода то выводим
+    if (!empty($messages)) {
+        $message = $messages['success'][0];
+        print_r("<H2>{$message}</H2>");
+    }
     $findedProduct = array_reduce($productsData, function ($acc, $product) use ($searchId) {
         return $searchId === $product['id'] ? $product : $acc;
     }, []);
@@ -132,7 +143,8 @@ $app->get('/product/{id}', function ($request, $response, $args) use ($productsD
         ];
         return $this->get('renderer')->render($response, "products/single.phtml", $params);
     }
-    return $response->write('Woooops! Product not found!<br><a href="/products">All product</a>')->withStatus(404);
+    $url = $router->urlFor('products');
+    return $response->write("Woooops! Product not found!<br><a href='{$url}'>All products</a>")->withStatus(404);
 })->setName('singleProduct');
 
 // форма добавления нового товара
@@ -146,7 +158,6 @@ $app->get('/products/new', function ($request, $response) {
 
 // Отправляем запрос на ДОБАВЛЕНИЕ товара
 $app->post('/products', function ($request, $response) use ($router) {
-    //$data = $request->getParsedBody('product')['product'];
     $data = $request->getParsedBodyParam('product');
     if (empty(validate($data))) { // если ошибок нет
         $data = ['id' => makeUniqueId(), 'title' => $data['title'], 'description' => $data['description']];
@@ -154,13 +165,59 @@ $app->post('/products', function ($request, $response) use ($router) {
         file_put_contents('base.txt', json_encode($data) . "\n", FILE_APPEND);
         $url = $router->urlFor('products');
         return $response->withRedirect($url);
-    } elseif (!empty(validate($data))) { // если есть ошибки
+    } // если есть ошибки
         $params = [
             'product' => $data,
             'errors' => validate($data)
         ];
         $response = $response->withStatus(422); // статус страницы если были ошибки при вводе
         return $this->get('renderer')->render($response, 'products/new.phtml', $params);
-    }
 });
+
+// Форма обновления товара
+$app->get('/product/{id}/edit', function ($req, $res, $args) {
+    $productsData = getProductsData();
+    $searchId = $args['id'];
+    $findedProduct = array_reduce($productsData, function ($acc, $product) use ($searchId) {
+        return $searchId === $product['id'] ? $product : $acc;
+    }, []);
+    $params = [
+        'product' => $findedProduct,
+        'errors' => []
+    ];
+    return $this->get('renderer')->render($res, 'products/edit.phtml', $params);
+})->setName('editProduct');
+
+// Обработчик ОБНОВЛЕНИЯ ТОВАРА
+$app->patch('/product/{id}', function ($request, $response, $args) use ($router) {
+    $searchId = $args['id']; // искомый ИД для изменения
+    $data = $request->getParsedBodyParam('product'); // новые данные для изменения
+    $urlToSingeProduct = $router->urlFor('singleProduct', ['id' => $searchId]);
+    if (empty(validate($data))) { // если ошибок в новых данных нет
+        foreach (getProductsData() as $product) {
+            if ($product['id'] !== $searchId) {
+                $updatedListOfProducts[] = json_encode($product); // ложим обычный продукт в новый список
+            } elseif ($product['id'] === $searchId) { // если нашли именно тот ИД который хотели изменить
+                $updatedListOfProducts[] = json_encode(['id' => $searchId,
+                    'title' => $data['title'],
+                    'description' => $data['description']
+                ]);
+            }
+        }
+        $this->get('flash')->addMessage('success', 'Success! Product has been updated!');
+        // реализовать ПЕРЕЗАПИСЬ
+        $updatedListOfProducts = implode("\n", $updatedListOfProducts);
+        // удаляем старый файл
+        unlink('base.txt');
+        // записываем обновленный файл - плохая реализация так как при многопоточном режиме могут быть проблемы!
+        file_put_contents('base.txt', $updatedListOfProducts . "\n", FILE_APPEND);
+        return $response->withRedirect($urlToSingeProduct);
+    } // если есть ошибки
+        $params = ['product'  => ['id' => $searchId, 'title' => $data['title'], 'description' => $data['description']],
+            'errors' => validate($data)
+        ];
+        $response = $response->withStatus(422); // статус страницы если были ошибки при вводе
+        return $this->get('renderer')->render($response, 'products/edit.phtml', $params);
+});
+
 $app->run();
