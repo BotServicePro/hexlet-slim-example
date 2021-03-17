@@ -1,0 +1,24 @@
+<form action="/product/<?= htmlspecialchars($product['id']) ?>" method="post">
+    <input type="hidden" name="_METHOD" value="PATCH">
+    <div>
+        <label>
+            Edit title:<span style='color: red;'> *</span>
+                <br>
+            <input type="text" name="product[title]" value="<?= htmlspecialchars($product['title']); ?>">
+        </label>
+        <?php if (isset($errors['title'])): ?>
+            <div><b><?= $errors['title'] ?></b></div>
+        <?php endif ?>
+
+        <label>
+            Edit description:<span style='color: red;'> *</span>
+                <br>
+                <input type="text" name="product[description]" value="<?= htmlspecialchars($product['description']); ?>">
+        </label>
+        <?php if (isset($errors['description'])): ?>
+            <div><b><?= $errors['description'] ?></b></div>
+        <?php endif ?>
+    </div>
+    <br>
+    <input type="submit" value="Update">
+</form>
