@@ -85,7 +85,6 @@ $app->get('/products', function ($request, $response) {
     $slicedPosts = array_slice($productsData, ($page - 1) * $per, $per);
     $messages = $this->get('flash')->getMessages(); // читаем флэш сообщение которое образовалось в POST запросе
     // если есть сообщения для вывода то выводим
-    //print_r($messages);
     if (!empty($messages)) {
         $message = $messages['success'][0];
         print_r("<H2>{$message}</H2>");
@@ -163,8 +162,7 @@ $app->post('/products', function ($request, $response) use ($router) {
         $data = ['id' => makeUniqueId(), 'title' => $data['title'], 'description' => $data['description']];
         $this->get('flash')->addMessage('success', 'Success! Product has been created!');
         file_put_contents('base.txt', json_encode($data) . "\n", FILE_APPEND);
-        $url = $router->urlFor('products');
-        return $response->withRedirect($url);
+        return $response->withRedirect($router->urlFor('products'));
     } // если есть ошибки
         $params = [
             'product' => $data,
@@ -205,7 +203,6 @@ $app->patch('/product/{id}', function ($request, $response, $args) use ($router)
             }
         }
         $this->get('flash')->addMessage('success', 'Success! Product has been updated!');
-        // реализовать ПЕРЕЗАПИСЬ
         $updatedListOfProducts = implode("\n", $updatedListOfProducts);
         // удаляем старый файл
         unlink('base.txt');
@@ -218,6 +215,29 @@ $app->patch('/product/{id}', function ($request, $response, $args) use ($router)
         ];
         $response = $response->withStatus(422); // статус страницы если были ошибки при вводе
         return $this->get('renderer')->render($response, 'products/edit.phtml', $params);
+});
+
+
+
+
+
+
+// Форма удаления товара
+$app->get('/product/{id}/delete', function ($req, $res, $args) {
+    $id = $args['id'];
+    $repo->destroy($id);
+    $this->get('flash')->addMessage('success', 'School has been deleted');
+    return $response->withRedirect($router->urlFor('schools'));
+
+
+
+
+})->setName('deleteProduct');
+
+// DELETE запрос на удаление
+$app->delete('/product/{id}', function ($request, $response, $args) use ($router) {
+    $searchId = $args['id']; // искомый ИД для изменения
+
 });
 
 $app->run();
