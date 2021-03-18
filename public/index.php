@@ -217,27 +217,34 @@ $app->patch('/product/{id}', function ($request, $response, $args) use ($router)
         return $this->get('renderer')->render($response, 'products/edit.phtml', $params);
 });
 
-
-
-
-
-
 // Форма удаления товара
 $app->get('/product/{id}/delete', function ($req, $res, $args) {
-    $id = $args['id'];
-    $repo->destroy($id);
-    $this->get('flash')->addMessage('success', 'School has been deleted');
-    return $response->withRedirect($router->urlFor('schools'));
-
-
-
-
+    $productsData = getProductsData();
+    $searchId = $args['id'];
+    $findedProduct = array_reduce($productsData, function ($acc, $product) use ($searchId) {
+        return $searchId === $product['id'] ? $product : $acc;
+    }, []);
+    $params = [
+        'product' => $findedProduct,
+    ];
+    return $this->get('renderer')->render($res, 'products/delete.phtml', $params);
 })->setName('deleteProduct');
 
 // DELETE запрос на удаление
 $app->delete('/product/{id}', function ($request, $response, $args) use ($router) {
-    $searchId = $args['id']; // искомый ИД для изменения
-
+    $searchId = $args['id'];
+    foreach (getProductsData() as $product) {
+        if ($product['id'] !== $searchId) { // если ид НЕ совпал то записываем продукты все
+            $updatedListOfProducts[] = json_encode($product); // ложим обычный продукт в новый список
+        }
+    }
+    // в противном случае ИД совпадет, и тогда он просто не попадет в список
+    $this->get('flash')->addMessage('success', 'Success! Product has been deleted');
+    $updatedListOfProducts = implode("\n", $updatedListOfProducts);
+    unlink('base.txt'); // удаляем старый файл
+    // записываем обновленный файл - плохая реализация так как при многопоточном режиме могут быть проблемы!
+    file_put_contents('base.txt', $updatedListOfProducts . "\n", FILE_APPEND);
+    return $response->withRedirect('/products');
 });
 
 $app->run();
