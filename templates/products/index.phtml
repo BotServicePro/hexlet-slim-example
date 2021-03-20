@@ -21,7 +21,9 @@
 <br>
 <div>Search by Title:<br></div>
 <form action="/products" method="get">
-    <input type="search" name="term" value="<?= htmlspecialchars($searchRequest) ?>" />
+    <label>
+        <input type="search" name="term" value="<?= htmlspecialchars($searchRequest) ?>" />
+    </label>
     <input type="submit" value="Search" />
 </form>
 <br>
@@ -30,16 +32,46 @@
         <th>ID</th>
         <th>Title</th>
         <th>Description</th>
+        <th>Action</th>
     </tr>
     <?php foreach ($products as $product): ?>
         <tr>
             <td><a href="/product/<?= $product['id'] ?>"><?= $product['id'] ?> </a> </td>
             <td><?= $product['title'] ?></td>
             <td><?= $product['description'] ?></td>
+            <td style="text-align: center;">
+                <form action="/cart-items" method="post">
+                    <input type="hidden" name="item[id]" value="<?= $product['id'] ?>">
+                    <input type="hidden" name="item[title]" value="<?= $product['title'] ?>">
+                    <!-- Дополнительно передает параметр page - текущая странциу для будущег редиректа на ту же страницу-->
+                    <input type="hidden" name="item[page]" value="<?= $page ?>">
+                    <input type="submit" value="Add">
+                </form>
+            </td>
         </tr>
     <?php endforeach ?>
 </table>
 <br>
 <a href="?page=<?= $page < 2 ? 1 : $page - 1 ?>">Back</a> / <a href="?page=<?= $page + 1 ?>">Forwad</a>
+<br>
+<br>
+<?php if (count($cart) === 0) : ?>
+    <div><b>Cart is empty</b></div>
+<?php else : ?>
+    <div><b>Your cart:</b></div>
+    <?php foreach ($cart as $item) : ?>
+        <div>
+            <?= htmlspecialchars($item['title']) ?>: <?= htmlspecialchars($item['count']) ?>
+        </div>
+    <?php endforeach ?>
+        <br>
+        <form action="/cart-items" method="post">
+            <input type="hidden" name="_METHOD" value="DELETE">
+            <!-- Дополнительно передаем параметр page - текущая странциа
+            для будущег редиректа на ту же страницу-->
+            <input type="hidden" name="item[page]" value="<?= $page ?>">
+            <input type="submit" value="Clear">
+        </form>
+<?php endif ?>
 </body>
 </html>
