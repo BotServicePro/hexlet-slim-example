@@ -251,7 +251,7 @@ $app->delete('/product/{id}', function ($request, $response, $args) use ($router
     return $response->withRedirect('/products');
 });
 
-// обработчик добавления товаров в корзину
+// обработчик добавления товаров в корзину через куки
 $app->post('/cart-items', function ($request, $response) {
     $item = $request->getParsedBodyParam('item'); // достали товар из запроса на добавление
     $page = $item['page']; // получили страницу с которой добавили товар
@@ -266,12 +266,11 @@ $app->post('/cart-items', function ($request, $response) {
     return $response->withHeader('Set-Cookie', "cart={$encodedCart}")->withRedirect("/products?page={$page}");
 });
 
-// обработчик ОЧИСТКИ корзины
+// обработчик ОЧИСТКИ корзины через куки
 $app->delete('/cart-items', function ($request, $response) {
     $item = $request->getParsedBodyParam('item'); // инфа о всех товарах
     $page = $item['page']; // берем страницу с которой добавили товар, для будущего редиректа
     $encodedCart = json_encode([]); // для очистки передаем пустую карту
     return $response->withHeader('Set-Cookie', "cart={$encodedCart}")->withRedirect("/products?page={$page}");
 });
-
 $app->run();
