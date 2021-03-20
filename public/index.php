@@ -50,8 +50,8 @@ function makeUniqueId($len = 5): string
 {
     $chars = array_merge(range('a', 'z'), range('1', '9'));
     shuffle($chars);
-    $randChars = substr(implode($chars), 0, $len);
-    return $randChars;
+    $uniqueId = substr(implode($chars), 0, $len);
+    return $uniqueId;
 }
 
 // функци валидатор данных
@@ -72,13 +72,15 @@ $app->get('/', function ($request, $response) use ($router) {
     $response->write('<H>Welcome to AliParser</H><br><br>');
     // объявляем именованные маршруты
     $products = $router->urlFor('products'); // /products
-    $productNew = $router->urlFor('productNew'); // /products/new
-    $links = "<a href='{$products}'>All products</a> <br> <a href='{$productNew}'>Add new product</a>";
+    $newProduct = $router->urlFor('productNew'); // /products/new
+    $links = "<a href='{$products}'>All products</a> <br> <a href='{$newProduct}'>Add new product</a>";
     return $response->write($links);
 });
 
 // Выводим список всех товаров
 $app->get('/products', function ($request, $response) {
+    // читаем карту товаров из куков
+    $cart = json_decode($request->getCookieParam('cart', json_encode([])), true);
     $productsData = getProductsData();
     $per = 5;
     $page = $request->getQueryParam('page', 1);
@@ -103,18 +105,20 @@ $app->get('/products', function ($request, $response) {
                     'id' => $product['id'],
                     'title' => $product['title'],
                     'description' => $product['description'],
-                    'page' => $page
+                    'page' => $page,
+                    'cart' => $cart
                 ];
             }
         });
-        $params = ['products' => $result, 'searchRequest' => $searchRequest, 'flash' => $messages];
+        $params = ['products' => $result, 'searchRequest' => $searchRequest, 'flash' => $messages, 'page' => $page];
         return $this->get('renderer')->render($response, "products/index.phtml", $params);
     } else {
         // если поисковой запрос НЕ содержит значения, то передаем ВСЕ данные для полного отображения
         $params = ['products' => $slicedPosts,
             'searchRequest' => $searchRequest,
             'page' => $page,
-            'flash' => $messages
+            'flash' => $messages,
+            'cart' => $cart
         ];
         return $this->get('renderer')->render($response, "products/index.phtml", $params);
     }
@@ -245,6 +249,29 @@ $app->delete('/product/{id}', function ($request, $response, $args) use ($router
     // записываем обновленный файл - плохая реализация так как при многопоточном режиме могут быть проблемы!
     file_put_contents('base.txt', $updatedListOfProducts . "\n", FILE_APPEND);
     return $response->withRedirect('/products');
+});
+
+// обработчик добавления товаров в корзину
+$app->post('/cart-items', function ($request, $response) {
+    $item = $request->getParsedBodyParam('item'); // достали товар из запроса на добавление
+    $page = $item['page']; // получили страницу с которой добавили товар
+    $cart = json_decode($request->getCookieParam('cart', json_encode([])), true);
+    $id = $item['id'];
+    if (!isset($cart[$id])) {
+        $cart[$id] = ['title' => $item['title'], 'count' => 1];
+    } else {
+        $cart[$id]['count'] += 1;
+    }
+    $encodedCart = json_encode($cart);
+    return $response->withHeader('Set-Cookie', "cart={$encodedCart}")->withRedirect("/products?page={$page}");
+});
+
+// обработчик ОЧИСТКИ корзины
+$app->delete('/cart-items', function ($request, $response) {
+    $item = $request->getParsedBodyParam('item'); // инфа о всех товарах
+    $page = $item['page']; // берем страницу с которой добавили товар, для будущего редиректа
+    $encodedCart = json_encode([]); // для очистки передаем пустую карту
+    return $response->withHeader('Set-Cookie', "cart={$encodedCart}")->withRedirect("/products?page={$page}");
 });
 
 $app->run();
