@@ -91,7 +91,8 @@ $app->get('/', function ($request, $response) use ($router) {
         $products = $router->urlFor('products'); // /products
         $newProduct = $router->urlFor('productNew'); // /products/new
         $account = $router->urlFor('account');
-        $links = "<a href='{$products}'>All products</a> <br> <a href='{$newProduct}'>Add new product</a><br><a href='{$account}'>Account</a>";
+        $links = "<a href='{$products}'>All products</a> <br> <a href='{$newProduct}'>Add new product</a><br>
+            <a href='{$account}'>Account</a>";
         return $response->write($links);
     }
 });
@@ -132,7 +133,8 @@ $app->get('/products', function ($request, $response) {
         // если продуктов на странице нет
         if (count($slicedPosts) === 0) {
             --$page;
-            return $response->write("Wooops, not found! <br> <a href='/products?page={$page}'>Back</a>")->withStatus(404);
+            return $response->write("Wooops, not found! <br> <a href='/products?page={$page}'>Back</a>
+            ")->withStatus(404);
         }
         $searchRequest = $request->getQueryParam('term');
         // если поисковой запрос содержит значение (не нулл)
@@ -148,7 +150,12 @@ $app->get('/products', function ($request, $response) {
                     ];
                 }
             });
-            $params = ['products' => $result, 'searchRequest' => $searchRequest, 'flash' => $messages, 'page' => $page, 'cart' => $cart];
+            $params = [
+                'products' => $result,
+                'searchRequest' => $searchRequest,
+                'flash' => $messages, 'page' => $page,
+                'cart' => $cart
+            ];
             return $this->get('renderer')->render($response, "products/index.phtml", $params);
         } else {
             // если поисковой запрос НЕ содержит значения, то передаем ВСЕ данные для полного отображения
