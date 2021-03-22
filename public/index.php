@@ -276,7 +276,7 @@ $app->get('/product/{id}/edit', function ($req, $response, $args) {
             'product' => $findedProduct,
             'errors' => []
         ];
-        return $this->get('renderer')->render($res, 'products/edit.phtml', $params);
+        return $this->get('renderer')->render($response, 'products/edit.phtml', $params);
     }
 })->setName('editProduct');
 
@@ -342,7 +342,7 @@ $app->get('/product/{id}/delete', function ($req, $response, $args) {
         $params = [
             'product' => $findedProduct,
         ];
-        return $this->get('renderer')->render($res, 'products/delete.phtml', $params);
+        return $this->get('renderer')->render($response, 'products/delete.phtml', $params);
     }
 })->setName('deleteProduct');
 
@@ -438,7 +438,6 @@ $app->post('/session', function ($request, $response, $args) use ($users) {
         }
     }
 });
-
 
 // обработчик выхода - просто чистимс сессию
 $app->delete('/session', function ($request, $response) {
