@@ -9,7 +9,7 @@
 <?php endif ?>
 <!-- BEGIN (write your solution here) -->
 <?php if (is_null($currentUser)): ?>
-    <formh action="/session" method="post">
+    <forh action="/session" method="post">
         <h1>Sign In</h1>
         <div>Login:<span style='color: red;'> *</span><br>
             <label>
@@ -24,7 +24,7 @@
         <br>
         <input type="submit" value="Sign In">
         <h5><i>Login - Admin, pass - secret</i></h5>
-    </formh>
+    </forh>
 <?php endif ?>
 
 <?php if (!is_null($currentUser)): ?>
