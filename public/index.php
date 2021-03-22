@@ -67,8 +67,6 @@ function validate($data): array
     return $errors;
 }
 
-
-
 $users = [
     ['name' => 'admin', 'passwordDigest' => hash('sha256', 'secret')],
     ['name' => 'mike', 'passwordDigest' => hash('sha256', 'superpass')],
@@ -97,7 +95,7 @@ $app->get('/', function ($request, $response) use ($router) {
     }
 });
 
-
+// Личный аккаунт с выходом
 $app->get('/account', function ($request, $response) {
     $messages = $this->get('flash')->getMessages();
     $params = [
@@ -106,6 +104,7 @@ $app->get('/account', function ($request, $response) {
     ];
     return $this->get('renderer')->render($response, "account.phtml", $params);
 })->setName('account');
+
 
 // Выводим список всех товаров
 $app->get('/products', function ($request, $response) {
