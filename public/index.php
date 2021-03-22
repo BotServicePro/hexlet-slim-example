@@ -439,6 +439,7 @@ $app->post('/session', function ($request, $response, $args) use ($users) {
     }
 });
 
+
 // обработчик выхода - просто чистимс сессию
 $app->delete('/session', function ($request, $response) {
     $_SESSION = array();
