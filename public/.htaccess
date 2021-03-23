@@ -20,6 +20,6 @@
     RewriteRule ^ index.php [L]
 
     # Redirect to 404
-    ErrorDocument 404 templates/404.phtml
+    Redirect 404 /templates/404.phtml
 
 </IfModule>
