@@ -96,12 +96,6 @@ $app->get('/', function ($request, $response) use ($router) {
 });
 
 
-// Heroku router test
-$app->get('/cowsay', function() use($app) {
-    $app['monolog']->addDebug('cowsay');
-    return "<pre>".\Cowsayphp\Cow::say("Cool beans")."</pre>";
-});
-
 // Личный аккаунт с выходом
 $app->get('/account', function ($request, $response) {
     $messages = $this->get('flash')->getMessages();
