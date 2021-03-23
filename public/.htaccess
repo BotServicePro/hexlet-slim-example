@@ -19,7 +19,4 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 
-    # Redirect to 404
-    Redirect 404 /templates/404.phtml
-
 </IfModule>
