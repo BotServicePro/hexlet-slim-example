@@ -18,7 +18,9 @@
         "slim/php-view": "^3.1",
         "php-di/php-di": "^6.3",
         "slim/flash": "^0.4.0",
-        "alrik11es/cowsayphp": "^1.2"
+        "alrik11es/cowsayphp": "^1.2",
+        "csanquer/pdo-service-provider": "~1.1dev",
+        "symfony/flex": "^1.12"
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "3.*"
