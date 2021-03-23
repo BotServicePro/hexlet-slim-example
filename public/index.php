@@ -82,7 +82,7 @@ $app->get('/', function ($request, $response) use ($router) {
         'flash' => $messages,
         'currentUser' => $_SESSION['user'] ?? null
         ];
-        return $this->get('renderer')->render($response, 'account.phtml', $params);
+        return $this->get('renderer')->render($response, '/account.phtml', $params);
     } else {
         $response->write('<H>Welcome to AliParser</H><br><br>');
         // объявляем именованные маршруты
